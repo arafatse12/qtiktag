@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QLIKTAG</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --page-bg:#f3f4f6;
+      --card:#ffffff;
+      --ink:#111827;
+      --muted:#6b7280;
+      --accent:#dc2626;   /* H&M red */
+      --line:#e5e7eb;
+      --shadow:0 10px 28px rgba(0,0,0,.08);
+      --radius:14px;
+      --max:1040px;
+    }
+    body{ background:var(--page-bg); color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial }
+    .container-fixed{ max-width:var(--max); }
+
+    /* Header (hidden on Home) */
+    header{ text-align:center; padding:18px 16px 4px }
+    header h1{ font-size:clamp(1.05rem,1rem + .9vw,1.6rem); font-weight:700; margin:0 }
+    header small{ color:var(--accent) }
+    header.is-hidden{ display:none; }
+    main.topless{ margin-top:0 !important }
+
+    /* Generic view box */
+    .view{ display:none; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px }
+    .view.active{ display:block; animation:fade .2s ease }
+    @keyframes fade{ from{opacity:.6; transform:translateY(4px)} to{opacity:1; transform:none} }
+
+    .section-title{ font-size:1.6rem; font-weight:700; margin-bottom:.75rem }
+    .h3{ font-size:1.125rem; font-weight:600; margin-top:1rem }
+    .kv{ display:grid; grid-template-columns:220px 1fr; gap:10px 18px }
+    @media (max-width:576px){ .kv{ grid-template-columns:1fr } }
+
+    /* ===================== HOME (expanded) ===================== */
+    #view-home{ background:transparent; border:none; box-shadow:none; padding:0 }
+
+    .home-shell{ max-width:var(--max); margin-inline:auto }
+
+    .home-banner{
+      background:linear-gradient(180deg,#fff 0%, #f9fafb 80%);
+      border:1px solid var(--line);
+      border-bottom:0;
+      border-radius:16px 16px 0 0;
+      box-shadow:var(--shadow);
+      padding:26px 10px 16px;
+      text-align:center;
+    }
+    .home-logo{ color:var(--accent); font-weight:900; font-size:44px; letter-spacing:.6px; line-height:1 }
+    .home-sub{ color:#1f2937; font-size:.95rem; margin-top:6px }
+
+    .home-sep{              /* thin separator under banner like the demo */
+      height:10px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-top:0;
+      border-radius:0 0 12px 12px;
+      box-shadow:var(--shadow);
+    }
+
+    .home-stage{            /* the gray image stage */
+      background:#eceeef;
+      border:1px solid var(--line);
+      border-top:0;
+      border-radius:0 0 12px 12px;
+      box-shadow:var(--shadow);
+      width:100%;
+      min-height:52vh;      /* visible area even before image loads */
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+    }
+    .home-img{ max-width:92%; max-height:70vh; width:auto; height:auto; object-fit:contain; display:block }
+    @media (max-width:768px){ .home-img{ max-height:52vh } .home-stage{ min-height:44vh } }
+
+    .home-caption{ text-align:center; margin:14px 6px 10px; color:#262626 }
+    .home-title{ font-size:clamp(1rem, .9rem + .6vw, 1.15rem); font-weight:600 }
+    .home-serial{ font-size:.85rem; color:var(--accent); margin-top:2px }
+
+    /* At-a-glance cards */
+    .glance{
+      display:grid; grid-template-columns:repeat(12,1fr); gap:14px; margin-top:14px
+    }
+    .glance .card{ border-color:var(--line); border-radius:12px; box-shadow:var(--shadow) }
+    .span-4{ grid-column:span 4 }
+    .span-6{ grid-column:span 6 }
+    .span-8{ grid-column:span 8 }
+    .span-12{ grid-column:span 12 }
+    @media (max-width:992px){ .span-8{ grid-column:span 12 } .span-6{ grid-column:span 12 } }
+    @media (max-width:768px){ .span-4{ grid-column:span 12 } }
+
+    .kv-mini{ display:grid; grid-template-columns:120px 1fr; gap:6px 12px; font-size:.95rem }
+    .kv-mini strong{ color:#111827 }
+    .muted{ color:var(--muted) }
+
+    /* QR preview box */
+    .qr-box{ border:1px dashed var(--line); border-radius:10px; padding:14px; display:inline-block; background:#fff }
+    .qr-caption{ font-size:.85rem; color:#6b7280; margin-top:.5rem; text-align:center }
+
+    /* Floating 3-dot */
+    .fab{ position:fixed; right:22px; bottom:22px; z-index:1057; width:56px; height:56px; border-radius:50%; background:var(--accent); color:#fff; border:0; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow) }
+    .dots{display:flex;flex-direction:column;gap:4px}
+    .dots span{width:6px;height:6px;border-radius:50%;background:#fff;display:block}
+
+    /* Modal menu */
+    .modal-content{ border-radius:12px }
+    .menu-title{ font-size:.9rem; color:#6b7280; margin-left:.25rem }
+    .menu a{ display:flex; align-items:center; gap:.6rem; text-decoration:none; color:var(--ink); padding:.6rem .65rem; border-radius:.5rem }
+    .menu a:hover{ background:rgba(220,38,38,.08) }
+    .ico{ width:22px; height:22px; color:#6b7280; flex:0 0 22px }
+    .menu a:hover .ico{ color:var(--accent) }
+
+    /* Demo icons */
+    .medal-img,.leaf-img,.recycle-img,.earth-img,.gear-img{ width:min(520px,95%); aspect-ratio:1/1; background:#fff center/contain no-repeat; border:1px solid var(--line); border-radius:12px }
+    .gear-img{ background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Industrial_robot_gear_icon.svg/640px-Industrial_robot_gear_icon.svg.png') }
+    .leaf-img{ background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Leaf_icon_%28The_Noun_Project%29.svg/512px-Leaf_icon_%28The_Noun_Project%29.svg.png') }
+    .recycle-img{ background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Recycling_symbol2.svg/512px-Recycling_symbol2.svg.png') }
+    .medal-img{ background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Emblem-favorite.svg/512px-Emblem-favorite.svg.png') }
+    .earth-img{ background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/CO2_footprint_icon.svg/512px-CO2_footprint_icon.svg.png') }
+
+    .offcanvas-bottom { height:auto; max-height:70vh; }
+.offcanvas { box-shadow: var(--shadow); }
+
+/* Bottom-start modal (slides up from bottom-left) */
+.modal.bottom-start .modal-dialog{
+  position: fixed;
+  inset: auto auto 16px 16px;   /* bottom:16px; left:16px */
+  margin: 0;
+  width: min(420px, calc(100% - 32px));
+  transform: translateY(24px);   /* start off-screen a bit */
+  transition: transform .22s ease-out;
+}
+.modal.bottom-start.show .modal-dialog{ transform: translateY(0); }
+
+/* Nice rounded look */
+.modal.bottom-start .modal-content{ border-radius: 14px; overflow: hidden; }
+
+/* Mobile: dock to full width bottom sheet */
+@media (max-width: 576px){
+  .modal.bottom-start .modal-dialog{
+    left: 0; right: 0; bottom: 0;
+    width: 100%;
+  }
+  .modal.bottom-start .modal-content{ border-radius: 14px 14px 0 0; }
+}
+  </style>
+</head>
+<body>
+
+  <!-- Header (hidden on Home) -->
+  <header id="global-header">
+    <h1>CONNERY Baby Woven Trousers</h1>
+    <small>HM0004588CX000006</small>
+  </header>
+
+  <main id="main" class="container container-fixed my-3">
+
+    <!-- ===================== HOME ===================== -->
+    <section id="view-home" class="view active" data-route="home">
+      <div class="home-shell">
+        <div class="home-banner">
+          <div class="home-logo">QLIKTAG</div>
+          <!-- <div class="home-sub">Digital Passport</div> -->
+        </div>
+        <div class="home-sep"></div>
+
+        <div class="home-stage">
+          <img class="home-img" alt="Product photo"
+               src="https://cdn.qliktag.io/production/63ee03119cde45000847eb1c/HM%20Baby%20Trousers.png" />
+        </div>
+
+        <div class="home-caption">
+          <div class="home-title">CONNERY Baby Woven Trousers</div>
+          <div class="home-serial">HM0004588CX000006</div>
+        </div>
+
+        <!-- At‑a‑glance information pulled from your screenshots -->
+        <div class="glance">
+          <!-- Identity quick facts -->
+          <div class="card span-8">
+            <div class="card-body">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="fw-semibold">Item Identification</div>
+                <span class="badge text-bg-light border">Product ID</span>
+              </div>
+              <div class="kv-mini">
+                <div class="muted">BARCODE NUMBER</div><div><strong>88768333888282</strong></div>
+                <div class="muted">SERIAL NUMBER</div><div>HM0004588CX000006</div>
+                <div class="muted">ITEM SKU CODE</div><div>0004588C-CONNERY</div>
+                <div class="muted">ITEM NAME</div><div>CONNERY Baby Woven Trousers</div>
+                <div class="muted">ITEM DESCRIPTION</div><div>100% Organic Cotton Flat Woven Trousers for Babies inspired by Work Wear</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QR preview -->
+          <div class="card span-4">
+            <div class="card-body text-center">
+              <div class="qr-box">
+                <svg width="180" height="180" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg" aria-label="QR">
+                  <rect width="110" height="110" fill="#fff"/>
+                  <rect x="5" y="5" width="28" height="28" fill="#000"/>
+                  <rect x="77" y="5" width="28" height="28" fill="#000"/>
+                  <rect x="5" y="77" width="28" height="28" fill="#000"/>
+                  <g fill="#000">
+                    <rect x="45" y="15" width="6" height="6"/><rect x="57" y="15" width="6" height="6"/><rect x="69" y="15" width="6" height="6"/>
+                    <rect x="45" y="27" width="6" height="6"/><rect x="57" y="27" width="6" height="6"/><rect x="69" y="27" width="6" height="6"/>
+                    <rect x="45" y="39" width="6" height="6"/><rect x="57" y="39" width="6" height="6"/><rect x="69" y="39" width="6" height="6"/>
+                    <rect x="33" y="51" width="6" height="6"/><rect x="45" y="51" width="6" height="6"/><rect x="57" y="51" width="6" height="6"/><rect x="69" y="51" width="6" height="6"/><rect x="81" y="51" width="6" height="6"/>
+                    <rect x="33" y="63" width="6" height="6"/><rect x="45" y="63" width="6" height="6"/><rect x="57" y="63" width="6" height="6"/><rect x="69" y="63" width="6" height="6"/><rect x="81" y="63" width="6" height="6"/>
+                    <rect x="45" y="75" width="6" height="6"/><rect x="57" y="75" width="6" height="6"/><rect x="69" y="75" width="6" height="6"/>
+                  </g>
+                  <rect x="9" y="9" width="20" height="20" fill="#fff"/>
+                  <rect x="81" y="9" width="20" height="20" fill="#fff"/>
+                  <rect x="9" y="81" width="20" height="20" fill="#fff"/>
+                  <rect x="12" y="12" width="14" height="14" fill="#000"/>
+                  <rect x="84" y="12" width="14" height="14" fill="#000"/>
+                  <rect x="12" y="84" width="14" height="14" fill="#000"/>
+                </svg>
+              </div>
+              <div class="qr-caption mt-2">(01)07300235375212 • (21)HM0004588CX000006</div>
+            </div>
+          </div>
+
+          <!-- Batch timing -->
+          <div class="card span-6">
+            <div class="card-body">
+              <div class="fw-semibold mb-2">Batch Identification</div>
+              <div class="kv-mini">
+                <div class="muted">BATCH / LOT NUMBER</div><div>4588-3-2025</div>
+                <div class="muted">DATE OF MANUFACTURE</div><div>2025-04-08</div>
+                <div class="muted">DATE OF PACKAGING</div><div>2025-04-09</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Manufacturer box -->
+          <div class="card span-6">
+            <div class="card-body">
+              <div class="fw-semibold mb-2">Manufacturer Information</div>
+              <div class="kv-mini">
+                <div class="muted">MANUFACTURED BY</div><div>Manufactured for H &amp; M Hennes &amp; Mauritz GBC AB by Russell Garments SIM Fabrics Ltd.</div>
+                <div class="muted">ADDRESS</div>
+                <div>315, Road - 4, Baridhara DOHS, Dhaka, Bangladesh - 1206</div>
+                <div class="muted">ORIGIN</div><div>Made in Bangladesh</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accuracy / publisher -->
+          <div class="card span-12">
+            <div class="card-body d-flex flex-wrap gap-3 align-items-center">
+              <div class="me-auto">
+                <div class="small text-uppercase text-muted">Information Last Updated On</div>
+                <div class="fw-semibold">08/04/2025 – 04:07:45</div>
+              </div>
+              <div>
+                <div class="small text-uppercase text-muted">Information Published By</div>
+                <div class="fw-semibold">H&amp;M Group</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PRODUCT ID ===================== -->
+    <section id="view-product" class="view" data-route="product">
+      <h2 class="section-title">Product Identity</h2>
+
+      <div class="row g-4 align-items-start">
+        <div class="col-md-5">
+          <div class="qr-box text-center">
+            <svg width="220" height="220" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg" aria-label="QR">
+              <rect width="110" height="110" fill="#fff"/>
+              <rect x="5" y="5" width="28" height="28" fill="#000"/>
+              <rect x="77" y="5" width="28" height="28" fill="#000"/>
+              <rect x="5" y="77" width="28" height="28" fill="#000"/>
+              <g fill="#000">
+                <rect x="45" y="15" width="6" height="6"/><rect x="57" y="15" width="6" height="6"/><rect x="69" y="15" width="6" height="6"/>
+                <rect x="45" y="27" width="6" height="6"/><rect x="57" y="27" width="6" height="6"/><rect x="69" y="27" width="6" height="6"/>
+                <rect x="45" y="39" width="6" height="6"/><rect x="57" y="39" width="6" height="6"/><rect x="69" y="39" width="6" height="6"/>
+                <rect x="33" y="51" width="6" height="6"/><rect x="45" y="51" width="6" height="6"/><rect x="57" y="51" width="6" height="6"/><rect x="69" y="51" width="6" height="6"/><rect x="81" y="51" width="6" height="6"/>
+                <rect x="33" y="63" width="6" height="6"/><rect x="45" y="63" width="6" height="6"/><rect x="57" y="63" width="6" height="6"/><rect x="69" y="63" width="6" height="6"/><rect x="81" y="63" width="6" height="6"/>
+                <rect x="45" y="75" width="6" height="6"/><rect x="57" y="75" width="6" height="6"/><rect x="69" y="75" width="6" height="6"/>
+              </g>
+              <rect x="9" y="9" width="20" height="20" fill="#fff"/>
+              <rect x="81" y="9" width="20" height="20" fill="#fff"/>
+              <rect x="9" y="81" width="20" height="20" fill="#fff"/>
+              <rect x="12" y="12" width="14" height="14" fill="#000"/>
+              <rect x="84" y="12" width="14" height="14" fill="#000"/>
+              <rect x="12" y="84" width="14" height="14" fill="#000"/>
+            </svg>
+            <div class="qr-caption">QR encodes: (01)07300235375212 (21)HM0004588CX000006</div>
+          </div>
+        </div>
+
+        <div class="col-md-7">
+          <h3 class="h3">Item Identification</h3>
+          <div class="kv">
+            <div><strong>BARCODE NUMBER</strong></div><div>88768333888282</div>
+            <div><strong>SERIAL NUMBER</strong></div><div>HM0004588CX000006</div>
+            <div><strong>ITEM SKU CODE</strong></div><div>0004588C-CONNERY</div>
+            <div><strong>ITEM NAME</strong></div><div>CONNERY Baby Woven Trousers</div>
+            <div><strong>ITEM DESCRIPTION</strong></div><div>100% Organic Cotton Flat Woven Trousers for Babies inspired by Work Wear</div>
+          </div>
+
+          <h3 class="h3 mt-3">GTIN (AI 01) &amp; Serial (AI 21)</h3>
+          <div class="kv">
+            <div><strong>GTIN</strong></div><div>07300235375212</div>
+            <div><strong>Serial</strong></div><div>HM0004588CX000006</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="h3 mt-4">Batch Identification</h3>
+      <div class="kv">
+        <div><strong>BATCH / LOT NUMBER</strong></div><div>4588-3-2025</div>
+        <div><strong>DATE OF MANUFACTURE</strong></div><div>2025-04-08</div>
+        <div><strong>DATE OF PACKAGING</strong></div><div>2025-04-09</div>
+      </div>
+    </section>
+
+    <!-- ===================== MANUFACTURING ===================== -->
+    <section id="view-manufacturing" class="view" data-route="manufacturing">
+      <h2 class="section-title">Production &amp; Manufacturing Process</h2>
+      <div class="gear-img mb-3"></div>
+      <h3 class="h3">Production Process</h3>
+      <p>We are committed to long-term supplier relations based on trust and transparency. Our products pass through many suppliers from raw materials to finished goods. We do not own factories; we work with independent manufacturers.</p>
+      <h3 class="h3">Environmental Considerations</h3>
+      <p>Water, energy and chemicals are managed to recognized standards (e.g., ZDHC). Continuous improvement programs and audits help reduce the footprint.</p>
+      <h3 class="h3">Worker Wellbeing &amp; Audits</h3>
+      <p>Facilities are assessed against the Code of Conduct; corrective action plans are monitored to drive performance and positive impact.</p>
+    </section>
+
+    <!-- ===================== MATERIALS ===================== -->
+    <section id="view-materials" class="view" data-route="materials">
+      <h2 class="section-title">Key Materials &amp; Components Used</h2>
+      <p class="muted">Made From</p>
+      <p>Made from 100% organic cotton (BCI) and contains at least 20% recycled cotton.</p>
+      <h3 class="h3">Key Materials &amp; Component List</h3>
+      <div class="mt-2">
+        <strong>Organic Cotton (BCI)</strong>
+        <ul class="mb-3">
+          <li>ID – 60977</li><li>PERCENTAGE – 80%</li><li>BY VOLUME – 65 GMS</li><li>RECYCLABLE – true</li>
+          <li>SUPPLIER – Diganta Sweaters Ltd, Bangladesh</li>
+        </ul>
+        <strong>Recycled Cotton</strong>
+        <ul>
+          <li>ID – 60974</li><li>PERCENTAGE – 20%</li><li>BY VOLUME – 35 GMS</li><li>RECYCLABLE – true</li>
+          <li>SUPPLIER – Indigo Fabrics Pvt. Ltd., Bangladesh</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===================== CUSTODY ===================== -->
+    <section id="view-custody" class="view" data-route="custody">
+      <h2 class="section-title">Chain of Custody &amp; Traceability</h2>
+      <p class="muted">Item Traceability Map • FOR SERIAL NUMBER HM0004588CX000006</p>
+      <div class="ratio ratio-21x9 mb-3" style="background:#e5e4df;">
+        <div class="w-100 h-100 d-flex justify-content-center align-items-center text-muted">Traceability Map (placeholder)</div>
+      </div>
+      <h3 class="h3">Item Track &amp; Trace Event Log</h3>
+      <ul class="mb-0">
+        <li><strong>VECTOR_GARMENT – SHIPPED</strong> • 2025-03-14 12:43Z • 23.256832, 91.7318</li>
+        <li><strong>RED_EXPRESS – SHIPPED</strong> • 2025-03-13 17:15Z • 23.810331, 90.412521</li>
+        <li><strong>ESPREQ_RETAIL – RECEIVED</strong> • …</li>
+      </ul>
+    </section>
+
+    <!-- ===================== USAGE ===================== -->
+    <section id="view-usage" class="view" data-route="usage">
+      <h2 class="section-title">Use, Care, Reuse &amp; Recycle</h2>
+      <div class="recycle-img mb-3"></div>
+      <h3 class="h3">Usage &amp; Care Guidelines</h3>
+      <p>Follow label instructions. Reshape chunky knits and dry flat. Reduce washing frequency and temperature to lower impact.</p>
+      <h3 class="h3">End of Life &amp; Recycling</h3>
+      <p>Bring unwanted clothes to our collecting boxes (any brand). Wearable items are resold; others become new products or cleaning cloths.</p>
+      <h3 class="h3">Close the Loop</h3>
+      <p>Our Garment Collecting program has run since 2013, with recycling boxes in stores worldwide.</p>
+    </section>
+
+    <!-- ===================== CERTS ===================== -->
+    <section id="view-certs" class="view" data-route="certs">
+      <h2 class="section-title">Certifications</h2>
+      <div class="medal-img mb-3"></div>
+      <h3 class="h3">Compliance Statement</h3>
+      <p>We increase transparency and pioneer new materials and business models toward net-zero (2040).</p>
+      <h3 class="h3">Programs</h3>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="p-3 border rounded h-100">
+            <div class="fw-semibold mb-2">Cradle to Cradle Certified® Gold</div>
+            <p class="mb-2">Collection supports circularity; products are fully compostable.</p>
+            <a class="link-danger fw-semibold" href="#">Learn more →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SUSTAIN ===================== -->
+    <section id="view-sustain" class="view" data-route="sustain">
+      <h2 class="section-title">Sustainability</h2>
+      <div class="leaf-img mb-3"></div>
+      <h3 class="h3">Our Commitment</h3>
+      <p>We collaborate with partners globally to meet high environmental and social standards.</p>
+      <h3 class="h3">Manufacturing &amp; Supply Chain</h3>
+      <p>Long-term relationships with independent manufacturers; supplier list published and updated regularly.</p>
+      <h3 class="h3">Textile Materials</h3>
+      <p>Eco-friendly fibers like organic cotton; lower-impact processes.</p>
+    </section>
+
+    <!-- ===================== IMPACT ===================== -->
+    <section id="view-impact" class="view" data-route="impact">
+      <h2 class="section-title">Environmental Impact</h2>
+      <div class="earth-img mb-3"></div>
+      <h3 class="h3">Statement</h3>
+      <p>We aim for net-zero emissions by 2040, keeping products and materials in use for as long as possible.</p>
+      <div class="row g-3 mt-1">
+        <div class="col-md-4"><div class="p-3 border rounded text-center"><div class="fw-bold">CO₂e</div><div class="fs-4">12.4 kg</div><div class="text-muted small">cradle-to-gate</div></div></div>
+        <div class="col-md-4"><div class="p-3 border rounded text-center"><div class="fw-bold">Water</div><div class="fs-4">980 L</div><div class="text-muted small">freshwater use</div></div></div>
+        <div class="col-md-4"><div class="p-3 border rounded text-center"><div class="fw-bold">Energy</div><div class="fs-4">18.2 kWh</div><div class="text-muted small">process energy</div></div></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Floating 3-dot -->
+  <button class="fab" type="button" data-bs-toggle="modal" data-bs-target="#menuModal" aria-label="Open menu">
+    <span class="dots"><span></span><span></span><span></span></span>
+  </button>
+
+  <!-- Menu Modal -->
+<!-- Trigger stays the same (data-bs-toggle="modal" data-bs-target="#menuModal") -->
+
+<div class="modal fade" id="menuModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog" style="margin-top:26%!important">
+    <div class="modal-content p-2">
+      <div class="px-2 pt-2"><div class="menu-title">Menu</div></div>
+      <div class="modal-body pt-1">
+        <ul class="menu list-unstyled mb-0">
+          <li><a href="#product" data-target="product" class="route">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7v10M6 7v10M10 7v10M14 7v10M17 7v10M21 7v10"/></svg> Product ID
+          </a></li>
+          <li><a href="#manufacturing" data-target="manufacturing" class="route">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M19.4 4.6l-2.1 2.1M6.7 17.3l-2.1 2.1"/></svg> Manufacturing Process
+          </a></li>
+          <li><a href="#materials" data-target="materials" class="route">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l7 4v6l-7 4-7-4V7l7-4z"/><path d="M5 7l7 4 7-4M12 11v6"/></svg> Key Materials &amp; Components
+          </a></li>
+          <li><a href="#custody" data-target="custody" class="route">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Chain of Custody
+          </a></li>
+          <li><a href="#usage" data-target="usage" class="route">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14.5 5a3.5 3.5 0 1 1-5 5L4 15v5h5l5.5-5.5"/><path d="M19 12v7l3-1.5 3 1.5v-7"/></svg> Use • Care • Recycle
+          </a></li>
+          <li><a href="#certs" data-target="certs" class="route">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l2.5 4.9L20 8l-4 3.9L17 18l-5-2.6L7 18l1-6.1L4 8l5.5-.9L12 2z"/></svg> Certifications
+          </a></li>
+          <li><a href="#sustain" data-target="sustain" class="route">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 21s7-1 11-5 5-11 5-11-7 1-11 5-5 11-5 11z"/><path d="M14 10L3 21"/></svg> Sustainability
+          </a></li>
+          <li><a href="#impact" data-target="impact" class="route">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7.5 4c-2 0-3.5 2-3.5 4 0 2.2 1.3 3.3 2.5 4.5 1.1 1.1 1.5 2.5 1.5 4.5h4c0-2.6-.7-4.4-2-5.7 1.2-1.9.5-7.8 2.5-7.8z"/></svg> Environmental Impact
+          </a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const views = document.querySelectorAll('.view');
+    const header = document.getElementById('global-header');
+    const mainEl = document.getElementById('main');
+
+    function showView(route){
+      const r = route || 'home';
+      views.forEach(v => v.classList.toggle('active', v.dataset.route === r));
+      header.classList.toggle('is-hidden', r === 'home');  // hide header on home
+      mainEl.classList.toggle('topless', r === 'home');    // home touches top
+      if (location.hash.replace('#','') !== r) history.replaceState(null,'','#'+r);
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    document.querySelectorAll('.route').forEach(a=>{
+      a.addEventListener('click', (e)=>{
+        e.preventDefault();
+        showView(a.dataset.target);
+        const menu = bootstrap.Modal.getInstance(document.getElementById('menuModal'));
+        if (menu) menu.hide();
+      });
+    });
+
+    window.addEventListener('hashchange', ()=>showView(location.hash.replace('#','')));
+    showView(location.hash.replace('#','') || 'home');
+
+            document.querySelectorAll('.route').forEach(a=>{
+        a.addEventListener('click', (e)=>{
+            e.preventDefault();
+            showView(a.dataset.target);
+
+            // close the bottom sheet
+            const sheet = bootstrap.Offcanvas.getInstance(document.getElementById('menuSheet'));
+            if (sheet) sheet.hide();
+        });
+        });
+
+        document.querySelectorAll('.route').forEach(a=>{
+  a.addEventListener('click', ()=>{
+    const m = bootstrap.Modal.getInstance(document.getElementById('menuModal'));
+    if (m) m.hide();
+  });
+});
+  </script>
+</body>
+</html>
