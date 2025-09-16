@@ -23,10 +23,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/{gtin}', function (string $gtin) {
-    // Only numbers? keep it strict:
-    abort_if(!preg_match('/^\d+$/', $gtin), 404);
-    return redirect("http://127.0.0.1:3000/{$gtin}");
-});
+
 
 require __DIR__.'/auth.php';
+
+Route::get('/{gtin}', function (string $gtin) {
+    // Send GTIN paths to Next.js dev server (change 3000 if different).
+    return redirect()->away("http://127.0.0.1:3000/{$gtin}");
+})->where('gtin', '^\d{16}$'); // or ->whereNumber('gtin') for any length

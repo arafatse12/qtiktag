@@ -68,7 +68,7 @@ class BarcodeService
                     'gtin14'       => $gtin14,
                     'gtin16'       => $gtin16,
                     'quantity'     => $qty,
-                    'qr_path'      => "storage/{$qrRel}",
+                    'qr_path'      => "{$appUrl}/storage/{$qrRel}",
                     // 'barcode_path' => "storage/{$bcRel}",
                 ]);
 

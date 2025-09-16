@@ -2,6 +2,8 @@
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\GtinMappingController;
+use App\Http\Controllers\ContentSectionController;
+
 
 
 
@@ -20,6 +22,10 @@ Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
         return response()->json(['message' => 'Welcome User']);
     });
 });
+
+Route::get('/sections', [ContentSectionController::class, 'index']);
+Route::get('/sections/{slug}', [ContentSectionController::class, 'show']);
+Route::post('/sections', [ContentSectionController::class, 'store']); 
 
 
 Route::get('/gtins/{gtin}', [GtinMappingController::class, 'show']);
