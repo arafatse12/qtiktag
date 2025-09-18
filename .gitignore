@@ -9,10 +9,9 @@
 # Logs
 *.log
 phpunit.result.cache
-.phpunit.result.cache
 .phpunit.cache
 
-# Environment
+# Env
 .env
 .env.*
 auth.json
