@@ -121,6 +121,26 @@ function t(input: string, vm: ViewModel): string {
   });
 }
 
+/* ===== Hash aliases & helpers (NEW) ===== */
+
+const HASH_ALIASES: Record<string, RouteKey> = {
+  home: 'home',
+  '01': 'product',       // AI (01) → Product Identity
+  product: 'product',
+  manufacturing: 'manufacturing',
+  materials: 'materials',
+  custody: 'custody',
+  usage: 'usage',
+  certs: 'certs',
+  sustain: 'sustain',
+  impact: 'impact',
+};
+
+function parseHashToRoute(raw: string): RouteKey | null {
+  const h = (raw || '').replace(/^#/, '').trim().toLowerCase();
+  return (HASH_ALIASES[h] as RouteKey) || null;
+}
+
 /* ===================== DATA FETCH ===================== */
 
 /** Product endpoint (enforce url GTIN = api GTIN) */
@@ -338,7 +358,7 @@ function SectionRenderer({
 /* ===================== PAGE ===================== */
 
 export default function Page({ params }: { params: Promise<{ gtin?: string }> }) {
-  const { gtin = '' } = React.use(params); // ⬅️ unwrap the Promise once
+  const { gtin = '' } = React.use(params); // unwrap the Promise once
   const [route, setRoute] = useState<RouteKey>('home');
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -351,16 +371,18 @@ export default function Page({ params }: { params: Promise<{ gtin?: string }> })
   const sectionSlugs: RouteKey[] = ['product', 'manufacturing', 'materials', 'custody', 'usage', 'certs', 'sustain', 'impact'];
   const [sections, setSections] = useState<Record<string, SectionDoc | null>>({});
 
-  // initial route from hash
+  /* ===== Routing behavior (NEW) ===== */
+
+  // initial route from hash (defaults to home)
   useEffect(() => {
-    const hash = (location.hash || '').replace('#', '') as RouteKey;
-    if (hash) setRoute(hash);
+    const r = parseHashToRoute(location.hash) || 'home';
+    setRoute(r);
   }, []);
 
   // respond to hash changes (back/forward)
   useEffect(() => {
     const onHash = () => {
-      const r = (location.hash.replace('#', '') || 'home') as RouteKey;
+      const r = parseHashToRoute(location.hash) || 'home';
       setRoute(r);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -368,10 +390,14 @@ export default function Page({ params }: { params: Promise<{ gtin?: string }> })
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  // sync hash when route changes (avoid loops)
+  // sync URL with current route (keep Home clean — no #home)
   useEffect(() => {
-    const current = (location.hash || '').replace('#', '');
-    if (current !== route) history.replaceState(null, '', `#${route}`);
+    const basePath = location.pathname + location.search;
+    if (route === 'home') {
+      history.replaceState(null, '', basePath);
+    } else {
+      history.replaceState(null, '', `${basePath}#${route}`);
+    }
   }, [route]);
 
   // fetch product + sections
@@ -397,7 +423,6 @@ export default function Page({ params }: { params: Promise<{ gtin?: string }> })
       }
     })();
   }, [gtin]);
-
 
   const isHome = route === 'home';
   const viewCls = (k: RouteKey) => `view ${route === k ? 'active' : ''}`;
@@ -479,7 +504,18 @@ export default function Page({ params }: { params: Promise<{ gtin?: string }> })
                 </div>
                 <div className="home-caption">
                   <div className="home-title">{vm!.name}</div>
-                  <div className="home-serial">{vm!.serial}</div>
+
+                  {/* Serial number opens the menu (NEW) */}
+                  <button
+                    type="button"
+                    className="home-serial"
+                    onClick={() => setMenuOpen(true)}
+                    style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}
+                    aria-label="Open menu"
+                    title="Open menu"
+                  >
+                    {vm!.serial}
+                  </button>
                 </div>
 
                 {/* At-a-glance */}
@@ -659,6 +695,7 @@ export default function Page({ params }: { params: Promise<{ gtin?: string }> })
               setRoute(key as RouteKey);
               setMenuOpen(false);
             }}
+            currentRoute={route}   // NEW: keep menu highlight in sync
           />
         </>
       )}

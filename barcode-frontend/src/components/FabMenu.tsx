@@ -65,11 +65,13 @@ export default function FabMenu({
   onOpen,
   onClose,
   onNavigate,
+  currentRoute, // NEW
 }: {
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
   onNavigate: (key: RouteKey) => void;
+  currentRoute: RouteKey; // NEW
 }) {
   return (
     <>
@@ -99,7 +101,7 @@ export default function FabMenu({
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        {/* ⬇️ required wrapper */}
+        {/* required wrapper */}
         <div className="modal-dialog">
           <div className="modal-content sheet">
             <div className="sheet-header">
@@ -113,7 +115,7 @@ export default function FabMenu({
                     <a
                       href={`#${m.key}`}
                       data-target={m.key}
-                      className={`route ${typeof window !== 'undefined' && window.location.hash === '#' + m.key ? 'active' : ''}`}
+                      className={`route ${currentRoute === m.key ? 'active' : ''}`}
                       onClick={(e) => {
                         e.preventDefault();
                         onNavigate(m.key);
